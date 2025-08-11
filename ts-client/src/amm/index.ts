@@ -2933,14 +2933,24 @@ export default class AmmImpl implements AmmImplementation {
     let tx: Transaction;
 
     if (isTokenAOrBNative) {
-      const tempWSol = receiver && !receiver.equals(owner) ? tempWSolAcc : owner;
+      let tempWSol: PublicKey;
+
+      if (receiver && !receiver.equals(owner)) {
+        if (!tempWSolAcc) {
+          throw new Error('tempWSolAcc is required when receiver is different from owner for native token pools');
+        }
+        tempWSol = tempWSolAcc;
+      } else {
+        tempWSol = owner;
+      }
+
       const feeReceiver = receiver ? receiver : owner;
 
       const result = await this.claimWithQuoteMintSol({
         owner,
         payer,
         receiver: feeReceiver,
-        tempWSolAcc: tempWSol!,
+        tempWSolAcc: tempWSol,
         lockEscrowPK,
       });
 
@@ -2966,6 +2976,79 @@ export default class AmmImpl implements AmmImplementation {
         .preInstructions(result.preInstructions)
         .transaction();
     }
+
+    return new Transaction({
+      feePayer: payer,
+      ...(await this.program.provider.connection.getLatestBlockhash(this.program.provider.connection.commitment)),
+    }).add(tx);
+  }
+
+  public async claimLockFee2(
+    owner: PublicKey,
+    maxAmount: BN,
+    payer: PublicKey,
+    receiver: PublicKey,
+  ): Promise<Transaction> {
+    const [lockEscrowPK] = deriveLockEscrowPda(this.address, owner, this.program.programId);
+
+    let tokenAOwner = receiver;
+    let tokenBOwner = receiver;
+
+    if (this.tokenAMint.address.equals(NATIVE_MINT)) {
+      tokenAOwner = owner;
+    }
+
+    if (this.tokenBMint.address.equals(NATIVE_MINT)) {
+      tokenBOwner = owner;
+    }
+
+    const preInstructions: TransactionInstruction[] = [];
+
+    const [
+      [userAta, createUserAtaIx],
+      [escrowAta, createEscrowAtaIx],
+      [tokenAAta, createTokenAAtaIx],
+      [tokenBAta, createTokenBAtaIx],
+    ] = await Promise.all([
+      getOrCreateATAInstruction(this.poolState.lpMint, owner, this.program.provider.connection, payer),
+      getOrCreateATAInstruction(this.poolState.lpMint, lockEscrowPK, this.program.provider.connection, payer),
+      getOrCreateATAInstruction(this.poolState.tokenAMint, tokenAOwner, this.program.provider.connection, payer),
+      getOrCreateATAInstruction(this.poolState.tokenBMint, tokenBOwner, this.program.provider.connection, payer),
+    ]);
+
+    createUserAtaIx && preInstructions.push(createUserAtaIx);
+    createEscrowAtaIx && preInstructions.push(createEscrowAtaIx);
+    createTokenAAtaIx && preInstructions.push(createTokenAAtaIx);
+    createTokenBAtaIx && preInstructions.push(createTokenBAtaIx);
+
+    const accounts = {
+      pool: this.address,
+      lockEscrow: lockEscrowPK,
+      owner,
+      lpMint: this.poolState.lpMint,
+      sourceTokens: userAta,
+      escrowVault: escrowAta,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      aVault: this.poolState.aVault,
+      bVault: this.poolState.bVault,
+      aVaultLp: this.poolState.aVaultLp,
+      bVaultLp: this.poolState.bVaultLp,
+      aVaultLpMint: this.vaultA.vaultState.lpMint,
+      bVaultLpMint: this.vaultB.vaultState.lpMint,
+      vaultProgram: this.vaultProgram.programId,
+      aTokenVault: this.vaultA.vaultState.tokenVault,
+      bTokenVault: this.vaultB.vaultState.tokenVault,
+      userAToken: tokenAAta,
+      userBToken: tokenBAta,
+    };
+
+    let tx: Transaction;
+
+    tx = await this.program.methods
+      .claimFee(maxAmount)
+      .accounts(accounts)
+      .preInstructions(preInstructions)
+      .transaction();
 
     return new Transaction({
       feePayer: payer,
