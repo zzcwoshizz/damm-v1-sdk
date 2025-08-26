@@ -51,15 +51,6 @@ pub struct Initialize<'info> {
     // pub base: Signer<'info>,
 
     /// Vault account
-    #[account(
-        init,
-        seeds = [
-            seed::VAULT_PREFIX.as_ref(), token_mint.key().as_ref(), get_base_address().as_ref()
-        ],
-        bump,
-        payer = payer,
-        space = 8 + std::mem::size_of::<Vault>(),
-    )]
     pub vault: Box<Account<'info, Vault>>,
 
     /// Payer can be anyone
@@ -67,26 +58,10 @@ pub struct Initialize<'info> {
     pub payer: Signer<'info>,
 
     /// Token vault account
-    #[account(
-        init,
-        seeds = [seed::TOKEN_VAULT_PREFIX.as_ref(), vault.key().as_ref()],
-        bump,
-        payer = payer,
-        token::mint = token_mint,
-        token::authority = vault,
-    )]
     pub token_vault: Box<Account<'info, TokenAccount>>,
     /// Token mint account
     pub token_mint: Box<Account<'info, Mint>>, // allocate some accounts in heap to avoid stack frame size limit
     /// LP mint account
-    #[account(
-        init,
-        seeds = [seed::LP_MINT_PREFIX.as_ref(), vault.key().as_ref()],
-        bump,
-        payer = payer,
-        mint::decimals = token_mint.decimals,
-        mint::authority = vault,
-    )]
     pub lp_mint: Box<Account<'info, Mint>>,
     /// rent
     pub rent: Sysvar<'info, Rent>,

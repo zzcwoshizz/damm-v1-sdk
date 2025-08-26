@@ -13,17 +13,6 @@ use std::u64;
 
 #[derive(Accounts)]
 pub struct InitializeCustomizablePermissionlessConstantProductPool<'info> {
-    #[account(
-        init,
-        seeds = [
-            b"pool",
-            get_first_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            get_second_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-        ],
-        bump,
-        payer = payer,
-        space = 8 + std::mem::size_of::<Pool>()
-    )]
     /// Pool account (PDA address)
     pub pool: Box<Account<'info, Pool>>,
 
@@ -49,11 +38,13 @@ pub struct InitializeCustomizablePermissionlessConstantProductPool<'info> {
     )]
     pub token_b_mint: Box<Account<'info, Mint>>,
 
-    #[account(mut)]
     /// Vault account for token A. Token A of the pool will be deposit / withdraw from this vault account.
-    pub a_vault: AccountInfo<'info>,
+    /// CHECK: This account is validated in the handler
     #[account(mut)]
+    pub a_vault: AccountInfo<'info>,
     /// Vault account for token B. Token B of the pool will be deposit / withdraw from this vault account.
+    /// CHECK: This account is validated in the handler
+    #[account(mut)]
     pub b_vault: AccountInfo<'info>,
 
     #[account(mut)]
@@ -157,6 +148,7 @@ pub struct InitializeCustomizablePermissionlessConstantProductPool<'info> {
     pub metadata_program: UncheckedAccount<'info>,
 
     /// Vault program. The pool will deposit/withdraw liquidity from the vault.
+    /// CHECK: This account is checked by the handler to ensure it's a valid vault program
     pub vault_program: UncheckedAccount<'info>,
     /// Token program.
     pub token_program: Program<'info, Token>,

@@ -8,6 +8,7 @@ edition = "2021"
 default = ["cpi"]
 no-entrypoint = []
 cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 localnet = []
 staging = []
 
@@ -18,4 +19,3 @@ name = "dynamic_amm"
 [dependencies]
 anchor-lang = { version = "0.31.1", features = ["event-cpi"] }
 anchor-spl = "0.31.1"
-solana-program = "2.3.0"

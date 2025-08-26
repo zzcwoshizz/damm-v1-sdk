@@ -8,17 +8,6 @@ use anchor_spl::{
 
 #[derive(Accounts)]
 pub struct InitializePermissionlessConstantProductPoolWithConfig<'info> {
-    #[account(
-        init,
-        seeds = [
-            get_first_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            get_second_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            config.key().as_ref()
-        ],
-        bump,
-        payer = payer,
-        space = 8 + std::mem::size_of::<Pool>()
-    )]
     /// Pool account (PDA address)
     pub pool: Box<Account<'info, Pool>>,
 

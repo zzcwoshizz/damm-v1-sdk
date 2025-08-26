@@ -8,6 +8,7 @@ edition = "2021"
 default = ["cpi"]
 no-entrypoint = []
 cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 localnet = []
 
 [lib]

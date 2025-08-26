@@ -74,18 +74,6 @@ pub fn get_trade_fee_bps_bytes(trade_fee_bps: u64) -> Vec<u8> {
 #[instruction(curve_type: CurveType)]
 #[allow(deprecated)]
 pub struct InitializePermissionlessPool<'info> {
-    #[account(
-        init,
-        seeds = [
-            &get_curve_type(curve_type).to_le_bytes(),
-            get_first_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            get_second_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-        ],
-        bump,
-        payer = payer,
-        // No point to rent for max 10 MB, as when deserialize it will hit stack limit
-        space = 8 + std::mem::size_of::<Pool>()
-    )]
     /// Pool account (PDA address)
     pub pool: Box<Account<'info, Pool>>,
 
@@ -234,19 +222,6 @@ pub struct InitializePermissionlessPool<'info> {
 #[derive(Accounts)]
 #[instruction(curve_type: CurveType, trade_fee_bps: u64)]
 pub struct InitializePermissionlessPoolWithFeeTier<'info> {
-    #[account(
-        init,
-        seeds = [
-            &get_curve_type(curve_type).to_le_bytes(),
-            get_first_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            get_second_key(token_a_mint.key(), token_b_mint.key()).as_ref(),
-            get_trade_fee_bps_bytes(trade_fee_bps).as_ref(), // Do not include owner trade fee
-        ],
-        bump,
-        payer = payer,
-        // No point to rent for max 10 MB, as when deserialize it will hit stack limit
-        space = 8 + std::mem::size_of::<Pool>()
-    )]
     /// Pool account (PDA address)
     pub pool: Box<Account<'info, Pool>>,
 
