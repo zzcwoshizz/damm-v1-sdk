@@ -46,7 +46,7 @@ pub mod dynamic_vault {
 /// Accounts for [vault::initialize]
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    /// This is base account for all vault    
+    /// This is base account for all vault
     /// No need base key now because we only allow 1 vault per token now
     // pub base: Signer<'info>,
 
